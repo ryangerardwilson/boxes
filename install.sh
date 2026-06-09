@@ -106,11 +106,28 @@ install_from_binary() {
   write_public_launcher
 }
 
+source_build_version() {
+  local source_path=$1
+  local described=""
+  if command -v git >/dev/null 2>&1 && git -C "$source_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    described="$(git -C "$source_path" describe --tags --dirty --always --match 'v[0-9]*' 2>/dev/null || true)"
+    described="${described#v}"
+  fi
+  if [[ -z "$described" ]]; then
+    described="0.0.0"
+  fi
+  printf '%s\n' "$described"
+}
+
 install_from_source() {
   local source_path=$1
+  local build_version
   require_command go
+  build_version="$(source_build_version "$source_path")"
   mkdir -p "$INSTALL_DIR"
-  (cd "$source_path" && go build -o "${INSTALL_DIR}/${APP}" ./cmd/boxes)
+  (cd "$source_path" && go build \
+    -ldflags "-X github.com/ryangerardwilson/boxes/internal/version.Version=${build_version}" \
+    -o "${INSTALL_DIR}/${APP}" ./cmd/boxes)
   chmod 755 "${INSTALL_DIR}/${APP}"
   write_public_launcher
 }

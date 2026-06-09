@@ -105,10 +105,12 @@ The SQLite database stores daily leaf-box status in `box_daily_status` and appen
 ## TUI keys
 
 ```text
+h/l            previous/next day
+ctrl+h/l       previous/next week
 j/k or arrows  move
 space/enter    check or uncheck
 e              edit config in vim
-r              reset today
+r              reset viewed day
 ?              toggle help
 q              quit
 ```

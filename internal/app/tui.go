@@ -15,13 +15,17 @@ import (
 )
 
 type keyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Toggle key.Binding
-	Edit   key.Binding
-	Reset  key.Binding
-	Help   key.Binding
-	Quit   key.Binding
+	PreviousDay  key.Binding
+	NextDay      key.Binding
+	PreviousWeek key.Binding
+	NextWeek     key.Binding
+	Up           key.Binding
+	Down         key.Binding
+	Toggle       key.Binding
+	Edit         key.Binding
+	Reset        key.Binding
+	Help         key.Binding
+	Quit         key.Binding
 }
 
 type editorFinishedMsg struct {
@@ -30,6 +34,22 @@ type editorFinishedMsg struct {
 
 func defaultKeyMap() keyMap {
 	return keyMap{
+		PreviousDay: key.NewBinding(
+			key.WithKeys("h"),
+			key.WithHelp("h", "previous day"),
+		),
+		NextDay: key.NewBinding(
+			key.WithKeys("l"),
+			key.WithHelp("l", "next day"),
+		),
+		PreviousWeek: key.NewBinding(
+			key.WithKeys("ctrl+h"),
+			key.WithHelp("ctrl+h", "previous week"),
+		),
+		NextWeek: key.NewBinding(
+			key.WithKeys("ctrl+l"),
+			key.WithHelp("ctrl+l", "next week"),
+		),
 		Up: key.NewBinding(
 			key.WithKeys("up", "k"),
 			key.WithHelp("k", "up"),
@@ -97,6 +117,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Help):
 			m.showHelp = !m.showHelp
+		case key.Matches(msg, m.keys.PreviousWeek):
+			m.moveDate(-7)
+		case key.Matches(msg, m.keys.NextWeek):
+			m.moveDate(7)
+		case key.Matches(msg, m.keys.PreviousDay):
+			m.moveDate(-1)
+		case key.Matches(msg, m.keys.NextDay):
+			m.moveDate(1)
 		case key.Matches(msg, m.keys.Up):
 			m.move(-1)
 		case key.Matches(msg, m.keys.Down):
@@ -107,7 +135,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.openConfigEditor()
 		case key.Matches(msg, m.keys.Reset):
 			m.state = m.state.Reset()
-			m.save("reset today")
+			m.save("reset day")
 		}
 	case editorFinishedMsg:
 		if msg.err != nil {
@@ -153,14 +181,34 @@ func (m *Model) move(delta int) {
 	m.message = ""
 }
 
+func (m *Model) moveDate(deltaDays int) {
+	current, err := time.ParseInLocation(time.DateOnly, m.state.Date, time.Local)
+	if err != nil {
+		m.err = fmt.Errorf("invalid current date %q: %w", m.state.Date, err)
+		m.message = ""
+		return
+	}
+
+	nextDate := current.AddDate(0, 0, deltaDays).Format(time.DateOnly)
+	nextState, err := m.store.LoadDay(nextDate)
+	if err != nil {
+		m.err = err
+		m.message = ""
+		return
+	}
+
+	m.state = nextState
+	m.clampSelected()
+	m.err = nil
+	m.message = fmt.Sprintf("viewing %s", nextDate)
+}
+
 func (m *Model) toggleSelected() {
 	items := m.config.Flatten()
 	if len(items) == 0 {
 		return
 	}
-	if m.selected >= len(items) {
-		m.selected = len(items) - 1
-	}
+	m.clampSelected()
 	item := items[m.selected]
 	wasChecked := m.state.StatusFor(item.ID, m.config) == core.StatusChecked
 	m.state = m.state.Toggle(item.ID, m.config)
@@ -199,14 +247,20 @@ func (m *Model) reloadConfig() {
 	}
 
 	m.config = config
+	m.clampSelected()
+	m.err = nil
+	m.message = "reloaded config"
+}
+
+func (m *Model) clampSelected() {
 	items := m.config.Flatten()
 	if len(items) == 0 {
+		m.selected = 0
+	} else if m.selected < 0 {
 		m.selected = 0
 	} else if m.selected >= len(items) {
 		m.selected = len(items) - 1
 	}
-	m.err = nil
-	m.message = "reloaded config"
 }
 
 func Run(store storage.Store, configPath string, config core.Config, date string) error {

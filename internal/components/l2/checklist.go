@@ -50,9 +50,9 @@ func RenderProgress(theme l1.Theme, done int, total int) string {
 
 func RenderHelpBar(theme l1.Theme, expanded bool) string {
 	if expanded {
-		return theme.Help.Render("j/k move  space check  e edit  r reset  ? hide help  q quit")
+		return theme.Help.Render("h/l day  ctrl+h/l week  j/k move  space check  e edit  r reset day  ? hide help  q quit")
 	}
-	return theme.Help.Render("space check  e edit  ? help  q quit")
+	return theme.Help.Render("h/l day  space check  e edit  ? help  q quit")
 }
 
 func JoinRows(rows []string) string {

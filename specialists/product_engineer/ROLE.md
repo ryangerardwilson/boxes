@@ -123,4 +123,6 @@ The first app is allowed to be small. Do not turn it into a generic framework
 until repeated boxes-like apps create real pressure.
 
 TUI key `e` opens the canonical config file in `vim` and reloads the outline
-after vim exits.
+after vim exits. TUI keys `h` and `l` move to the previous and next local
+calendar day. TUI keys `ctrl+h` and `ctrl+l` move to the previous and next
+week.
