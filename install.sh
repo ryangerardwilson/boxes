@@ -130,13 +130,13 @@ install_release() {
   asset_url="https://github.com/${REPO}/releases/download/v${version}/${FILENAME}"
   tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/${APP}_install_XXXXXX")"
   archive="$tmp_dir/$FILENAME"
-  trap 'rm -rf "$tmp_dir"' RETURN
 
-  curl -fL "$asset_url" -o "$archive" || die "Unable to download ${asset_url}"
+  curl -fsSL "$asset_url" -o "$archive" || die "Unable to download ${asset_url}"
   tar -xzf "$archive" -C "$tmp_dir"
   binary_path="$(find "$tmp_dir" -type f -name "$APP" -perm -u+x | head -n 1)"
   [[ -n "$binary_path" ]] || die "Release archive did not contain executable ${APP}"
   install_from_binary "$binary_path"
+  rm -rf "$tmp_dir"
   print_manual_shell_steps
   "${PUBLIC_LAUNCHER}" version
 }
@@ -188,4 +188,3 @@ case "$command_name" in
     die "unknown installer command: $command_name"
     ;;
 esac
-
