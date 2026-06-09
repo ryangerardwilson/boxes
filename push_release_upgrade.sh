@@ -8,6 +8,7 @@ APP=boxes
 REMOTE=origin
 REPO_SLUG=""
 ASSET_NAME="boxes-linux-x64.tar.gz"
+TMP_RELEASE_DIR=""
 
 usage() {
   cat <<'EOF'
@@ -135,19 +136,18 @@ main() {
   git show-ref --verify --quiet "refs/tags/${tag}" && die "Local tag ${tag} already exists"
   [[ -z "$(git ls-remote --tags --refs "$REMOTE" "refs/tags/${tag}")" ]] || die "Remote tag ${tag} already exists"
 
-  local tmp_dir
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/${APP}_release_XXXXXX")"
-  trap 'rm -rf "$tmp_dir"' EXIT
+  TMP_RELEASE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/${APP}_release_XXXXXX")"
+  trap 'rm -rf "${TMP_RELEASE_DIR:-}"' EXIT
 
   info "Building ${ASSET_NAME}..."
-  build_release_asset "$version" "$tmp_dir"
+  build_release_asset "$version" "$TMP_RELEASE_DIR"
 
   info "Creating tag ${tag}..."
   git tag -a "$tag" -m "Release ${tag}"
   git push "$REMOTE" "$tag"
 
   info "Publishing GitHub release ${tag}..."
-  gh release create "$tag" "$tmp_dir/$ASSET_NAME" \
+  gh release create "$tag" "$TMP_RELEASE_DIR/$ASSET_NAME" \
     --repo "$REPO_SLUG" \
     --title "$tag" \
     --notes "Release ${tag}"
@@ -159,4 +159,3 @@ main() {
 }
 
 main "$@"
-
