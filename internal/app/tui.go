@@ -172,7 +172,7 @@ func (m *Model) toggleSelected() {
 }
 
 func (m *Model) save(message string) {
-	if err := m.store.SaveDay(m.state); err != nil {
+	if err := m.store.SaveDay(m.state, m.config); err != nil {
 		m.err = err
 		m.message = ""
 		return

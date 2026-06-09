@@ -73,8 +73,8 @@ func (r Runner) openTUI() int {
 }
 
 func (r Runner) config(args []string) int {
-	if len(args) != 1 {
-		return r.fail("config expects: path or open")
+	if len(args) == 0 {
+		return r.fail("config expects: path, open, settings path, settings open, or database path")
 	}
 	store, ok := r.store()
 	if !ok {
@@ -83,9 +83,15 @@ func (r Runner) config(args []string) int {
 
 	switch args[0] {
 	case "path":
+		if len(args) != 1 {
+			return r.fail("config path takes no arguments")
+		}
 		_, _ = fmt.Fprintln(r.Out, store.Paths.ConfigPath)
 		return 0
 	case "open":
+		if len(args) != 1 {
+			return r.fail("config open takes no arguments")
+		}
 		path, err := store.EnsureConfig()
 		if err != nil {
 			return r.fail(err.Error())
@@ -94,9 +100,45 @@ func (r Runner) config(args []string) int {
 			return r.fail(err.Error())
 		}
 		return 0
+	case "settings":
+		return r.configSettings(store, args[1:])
+	case "database":
+		return r.configDatabase(store, args[1:])
 	default:
-		return r.fail("config expects: path or open")
+		return r.fail("config expects: path, open, settings path, settings open, or database path")
 	}
+}
+
+func (r Runner) configSettings(store storage.Store, args []string) int {
+	if len(args) != 1 {
+		return r.fail("config settings expects: path or open")
+	}
+	if store.Paths.SettingsPath == "" {
+		return r.fail("settings path is disabled when BOXES_CONFIG is set")
+	}
+	switch args[0] {
+	case "path":
+		_, _ = fmt.Fprintln(r.Out, store.Paths.SettingsPath)
+		return 0
+	case "open":
+		if err := store.EnsureSettings(); err != nil {
+			return r.fail(err.Error())
+		}
+		if err := openEditor(store.Paths.SettingsPath); err != nil {
+			return r.fail(err.Error())
+		}
+		return 0
+	default:
+		return r.fail("config settings expects: path or open")
+	}
+}
+
+func (r Runner) configDatabase(store storage.Store, args []string) int {
+	if len(args) != 1 || args[0] != "path" {
+		return r.fail("config database expects: path")
+	}
+	_, _ = fmt.Fprintln(r.Out, store.Paths.DatabasePath)
+	return 0
 }
 
 func (r Runner) today(args []string) int {
@@ -123,7 +165,7 @@ func (r Runner) today(args []string) int {
 		if len(args) != 1 {
 			return r.fail("today reset takes no arguments")
 		}
-		if err := store.SaveDay(state.Reset()); err != nil {
+		if err := store.SaveDay(state.Reset(), config); err != nil {
 			return r.fail(err.Error())
 		}
 		_, _ = fmt.Fprintln(r.Out, "reset today")
@@ -138,7 +180,7 @@ func (r Runner) today(args []string) int {
 			return r.fail(fmt.Sprintf("unknown item id %q", id))
 		}
 		next := state.WithChecked(id, args[0] == "check", config)
-		if err := store.SaveDay(next); err != nil {
+		if err := store.SaveDay(next, config); err != nil {
 			return r.fail(err.Error())
 		}
 		_, _ = fmt.Fprintf(r.Out, "%s %s\n", pastTense(args[0]), item.Label)
@@ -232,7 +274,12 @@ func (r Runner) loadOrCreateConfig() (storage.Store, core.Config, bool) {
 		_ = r.fail(err.Error())
 		return storage.Store{}, core.Config{}, false
 	}
-	return store, core.DefaultConfig(), true
+	config, _, err = store.LoadConfig()
+	if err != nil {
+		_ = r.fail(err.Error())
+		return storage.Store{}, core.Config{}, false
+	}
+	return store, config, true
 }
 
 func (r Runner) store() (storage.Store, bool) {

@@ -13,6 +13,7 @@ func TestRunnerCheckAndShow(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("BOXES_CONFIG", filepath.Join(dir, "config.json"))
 	t.Setenv("BOXES_DATA_HOME", filepath.Join(dir, "data"))
+	t.Setenv("BOXES_DATABASE", filepath.Join(dir, "boxes.db"))
 
 	var out bytes.Buffer
 	var errOut bytes.Buffer
@@ -74,6 +75,7 @@ func TestLoadOrCreateConfigCreatesEmptyConfig(t *testing.T) {
 	configPath := filepath.Join(dir, "boxes.txt")
 	t.Setenv("BOXES_CONFIG", configPath)
 	t.Setenv("BOXES_DATA_HOME", filepath.Join(dir, "data"))
+	t.Setenv("BOXES_DATABASE", filepath.Join(dir, "boxes.db"))
 
 	var out bytes.Buffer
 	var errOut bytes.Buffer

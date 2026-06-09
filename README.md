@@ -12,7 +12,11 @@ boxes version
 boxes
 ```
 
-The first bare `boxes` launch creates an editable outline config at `~/.config/boxes/boxes.txt` when one does not exist.
+The first bare `boxes` launch creates:
+
+- settings: `~/.config/boxes/config.json`
+- boxes outline: `~/Documents/notes/rituals.txt`
+- analytics database directory: `~/Data/`
 
 ## Run From Source
 
@@ -40,6 +44,9 @@ boxes upgrade
 
 boxes config path
 boxes config open
+boxes config settings path
+boxes config settings open
+boxes config database path
 
 boxes today show
 boxes today reset
@@ -49,17 +56,32 @@ boxes today uncheck <id>
 
 ## Config
 
-`boxes config open` opens the config file, creating an editable source-of-truth file when needed.
+`boxes config open` opens the boxes outline, creating an editable source-of-truth file when needed.
+
+`boxes config settings open` opens the JSON settings file that controls where the outline and SQLite database live.
 
 Default paths:
 
-- config: `~/.config/boxes/boxes.txt`
+- settings: `~/.config/boxes/config.json`
+- boxes outline: `~/Documents/notes/rituals.txt`
+- analytics database: `~/Data/boxes.db`
 - daily state: `~/.local/share/boxes/days/YYYY-MM-DD.json`
 
 Environment overrides:
 
-- `BOXES_CONFIG`: exact config file path
+- `BOXES_SETTINGS`: exact settings file path
+- `BOXES_CONFIG`: exact boxes outline path
+- `BOXES_DATABASE`: exact SQLite database path
 - `BOXES_DATA_HOME`: data directory for daily state
+
+Settings file:
+
+```json
+{
+  "boxes_path": "/home/ryan/Documents/notes/rituals.txt",
+  "database_path": "/home/ryan/Data/boxes.db"
+}
+```
 
 Example config:
 
@@ -76,7 +98,9 @@ Indent with two spaces for nested boxes. A parent box is done only when all of i
 
 IDs are derived from each item's path. In the example above, the CLI id for `Email` is `work/email`. Change labels carefully; changing a label changes the derived id for that item and its children.
 
-Legacy `~/.config/boxes/config.json` files are read and migrated to `boxes.txt` when the text config does not exist.
+Legacy list-style `~/.config/boxes/config.json` and `~/.config/boxes/boxes.txt` files are read and migrated to the configured outline path when needed.
+
+The SQLite database stores daily leaf-box status in `box_daily_status` and append-only changes in `box_events`.
 
 ## TUI keys
 
@@ -97,7 +121,7 @@ The Go UI starts the component-library direction without pretending the library 
 - `internal/components/l2`: reusable TUI patterns
 - `internal/components/l3`: boxes-specific day screen
 - `internal/core`: config and day-state rules
-- `internal/storage`: XDG paths, text config migration, and day-state persistence
+- `internal/storage`: settings, outline migration, SQLite history, and day-state persistence
 
 ## Maintainer Release
 

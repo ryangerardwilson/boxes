@@ -26,9 +26,11 @@ features:
   boxes
 
   edit or inspect the source-of-truth config
-  # config path|open
+  # config path|open | config settings path|open | config database path
   boxes config path
   boxes config open
+  boxes config settings open
+  boxes config database path
 
   inspect or reset today's state
   # today show|reset
